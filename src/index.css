@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(74, 222, 128, 0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(52, 211, 153, 0.02) 0%, transparent 50%);
+  }
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-surface-glass backdrop-blur-glass border border-border rounded-xl;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+  .glass-card-hover {
+    @apply transition-all duration-300;
+  }
+  .glass-card-hover:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(74, 222, 128, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    @apply border-primary/20;
+  }
+  .glow-text {
+    text-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+  }
+  .gradient-border {
+    position: relative;
+  }
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2), transparent 50%, rgba(52, 211, 153, 0.1));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .btn-primary {
+    @apply px-5 py-2.5 bg-primary text-background font-medium rounded-lg transition-all duration-200;
+    @apply hover:bg-primary-300 hover:shadow-glow active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply px-5 py-2.5 bg-surface-elevated border border-border text-foreground font-medium rounded-lg transition-all duration-200;
+    @apply hover:border-primary/30 hover:bg-surface-elevated/80 active:scale-[0.98];
+  }
+  .input-field {
+    @apply w-full px-4 py-2.5 bg-surface-elevated border border-border rounded-lg text-foreground placeholder:text-foreground-subtle;
+    @apply focus:outline-none focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all duration-200;
+  }
+  .label {
+    @apply block text-sm font-medium text-foreground-muted mb-1.5;
+  }
+  .section-title {
+    @apply text-2xl font-semibold text-foreground tracking-tight;
+  }
+  .section-subtitle {
+    @apply text-sm text-foreground-muted mt-1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
