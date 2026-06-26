@@ -26,6 +26,7 @@ export interface Scraper {
   id: string;
   user_id: string;
   aadhaar_number: string | null;
+  address: string | null;
   vehicle_type: string | null;
   service_radius: number | null;
   bank_account: string | null;

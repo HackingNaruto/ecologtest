@@ -17,6 +17,7 @@ export function ScraperRegistration() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     aadhaar: '',
+    address: '',
     vehicleType: 'bike',
     serviceRadius: 10,
     bankAccount: '',
@@ -33,6 +34,7 @@ export function ScraperRegistration() {
       await registerScraper({
         user_id: user.id,
         aadhaar_number: form.aadhaar,
+        address: form.address,
         vehicle_type: form.vehicleType,
         service_radius: form.serviceRadius,
         bank_account: form.bankAccount,
@@ -93,6 +95,21 @@ export function ScraperRegistration() {
                   placeholder="XXXX XXXX XXXX"
                   required
                   maxLength={14}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="label">Shop Address (Drop-off Location)</label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle" size={16} />
+                <input
+                  type="text"
+                  value={form.address}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  className="input-field pl-10"
+                  placeholder="Full shop address for drop-offs"
+                  required
                 />
               </div>
             </div>
