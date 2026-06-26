@@ -53,20 +53,30 @@ export function SettingsPage() {
   }, [user]);
 
   const handleSave = async () => {
-    await updateProfile({
-      full_name: formData.full_name,
-      phone: formData.phone,
-    });
-    
-    if (user?.role === 'scraper') {
-      await supabase
-        .from('scrapers')
-        .update({ address: formData.location })
-        .eq('user_id', user.id);
-    }
+    try {
+      await updateProfile({
+        full_name: formData.full_name,
+        phone: formData.phone,
+      });
+      
+      if (user?.role === 'scraper') {
+        const { error } = await supabase
+          .from('scrapers')
+          .update({ address: formData.location })
+          .eq('user_id', user.id);
+          
+        if (error) {
+          console.error("Supabase update error:", error);
+          alert("Error updating address: " + error.message);
+          return;
+        }
+      }
 
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err: any) {
+      alert("Error saving profile: " + err.message);
+    }
   };
 
   return (
