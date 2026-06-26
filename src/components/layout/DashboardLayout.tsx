@@ -224,16 +224,16 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <span className="text-foreground capitalize">{location.pathname.slice(1).replace(/-/g, ' ')}</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="relative p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
+            <Link to="/settings" className="relative p-2 rounded-lg hover:bg-white/[0.03] transition-colors">
               <Bell size={18} className="text-foreground-muted" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
-            </button>
-            <div className="flex items-center gap-2 pl-4 border-l border-border">
+            </Link>
+            <Link to="/settings" className="flex items-center gap-2 pl-4 border-l border-border hover:opacity-80 transition-opacity">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                 <User className="text-primary" size={16} />
               </div>
               <span className="text-sm font-medium text-foreground">{user?.full_name}</span>
-            </div>
+            </Link>
           </div>
         </div>
 
