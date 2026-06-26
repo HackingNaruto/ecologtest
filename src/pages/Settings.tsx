@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
@@ -16,6 +16,7 @@ import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const tabs = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -36,11 +37,34 @@ export function SettingsPage() {
     location: '',
   });
 
+  useEffect(() => {
+    if (user?.role === 'scraper') {
+      supabase
+        .from('scrapers')
+        .select('address')
+        .eq('user_id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data && data.address) {
+            setFormData((prev) => ({ ...prev, location: data.address }));
+          }
+        });
+    }
+  }, [user]);
+
   const handleSave = async () => {
     await updateProfile({
       full_name: formData.full_name,
       phone: formData.phone,
     });
+    
+    if (user?.role === 'scraper') {
+      await supabase
+        .from('scrapers')
+        .update({ address: formData.location })
+        .eq('user_id', user.id);
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -137,7 +161,9 @@ export function SettingsPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="label">Location</label>
+                      <label className="label">
+                        {user?.role === 'scraper' ? 'Shop Address (Drop-off Location)' : 'Location'}
+                      </label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle" size={16} />
                         <input
