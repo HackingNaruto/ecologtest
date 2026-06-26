@@ -38,13 +38,25 @@ export function SettingsPage() {
   });
 
   useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        full_name: user.full_name || prev.full_name,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
+    }
+
     if (user?.role === 'scraper') {
       supabase
         .from('scrapers')
         .select('address')
         .eq('user_id', user.id)
         .single()
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Fetch address error:", error);
+          }
           if (data && data.address) {
             setFormData((prev) => ({ ...prev, location: data.address }));
           }
