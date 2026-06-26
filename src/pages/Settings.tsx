@@ -72,14 +72,30 @@ export function SettingsPage() {
       });
       
       if (user?.role === 'scraper') {
-        const { error } = await supabase
+        const { data: existing } = await supabase
           .from('scrapers')
-          .update({ address: formData.location })
-          .eq('user_id', user.id);
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        let saveError = null;
+
+        if (existing) {
+          const { error } = await supabase
+            .from('scrapers')
+            .update({ address: formData.location })
+            .eq('user_id', user.id);
+          saveError = error;
+        } else {
+          const { error } = await supabase
+            .from('scrapers')
+            .insert({ user_id: user.id, address: formData.location, verification_status: 'pending' });
+          saveError = error;
+        }
           
-        if (error) {
-          console.error("Supabase update error:", error);
-          alert("Error updating address: " + error.message);
+        if (saveError) {
+          console.error("Supabase update error:", saveError);
+          alert("Error updating address: " + saveError.message);
           return;
         }
       }
