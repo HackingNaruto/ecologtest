@@ -50,15 +50,19 @@ export function SettingsPage() {
     if (user?.role === 'scraper') {
       supabase
         .from('scrapers')
-        .select('address')
+        .select('address, shop_name')
         .eq('user_id', user.id)
         .single()
         .then(({ data, error }) => {
           if (error) {
             console.error("Fetch address error:", error);
           }
-          if (data && data.address) {
-            setFormData((prev) => ({ ...prev, location: data.address }));
+          if (data) {
+            setFormData((prev) => ({ 
+              ...prev, 
+              location: data.address || '',
+              company: data.shop_name || ''
+            }));
           }
         });
     }
@@ -83,13 +87,13 @@ export function SettingsPage() {
         if (existing) {
           const { error } = await supabase
             .from('scrapers')
-            .update({ address: formData.location })
+            .update({ address: formData.location, shop_name: formData.company })
             .eq('user_id', user.id);
           saveError = error;
         } else {
           const { error } = await supabase
             .from('scrapers')
-            .insert({ user_id: user.id, address: formData.location, verification_status: 'pending' });
+            .insert({ user_id: user.id, address: formData.location, shop_name: formData.company, verification_status: 'pending' });
           saveError = error;
         }
           
@@ -186,7 +190,9 @@ export function SettingsPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="label">Company</label>
+                        <label className="label">
+                          {user?.role === 'scraper' ? 'Shop Name' : 'Company'}
+                        </label>
                         <div className="relative">
                           <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle" size={16} />
                           <input

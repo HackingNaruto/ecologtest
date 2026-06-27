@@ -302,7 +302,7 @@ function AssignedScraperDetails({ scraperId }: { scraperId: string }) {
         
       const { data: info } = await supabase
         .from("scrapers")
-        .select("address")
+        .select("address, shop_name")
         .eq("user_id", scraperId)
         .single();
 
@@ -318,7 +318,7 @@ function AssignedScraperDetails({ scraperId }: { scraperId: string }) {
   return (
     <div className="mt-4 p-4 bg-surface rounded-md border border-primary/20">
       <h4 className="font-semibold text-primary mb-2">Drop-off Location Details</h4>
-      <p className="text-sm text-foreground"><strong>Shop/Scrapper Name:</strong> {scraperProfile.full_name || "Authorized Scrapper"}</p>
+      <p className="text-sm text-foreground"><strong>Shop/Scrapper Name:</strong> {scraperInfo?.shop_name || scraperProfile.full_name || "Authorized Scrapper"}</p>
       <p className="text-sm text-foreground mb-3"><strong>Address:</strong> {scraperInfo?.address || "Address not provided by scrapper"}</p>
       
       {scraperProfile.phone && (
