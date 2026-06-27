@@ -61,8 +61,31 @@ export interface PickupRequest {
   assigned_scraper_id: string | null;
   pickup_fee: number | null;
   distance_km: number | null;
+  lot_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ScrapLot {
+  id: string;
+  scraper_id: string;
+  category: string;
+  weight_kg: number;
+  base_price: number;
+  status: 'open_for_bids' | 'completed' | 'paid';
+  auction_end_time: string;
+  winner_recycler_id: string | null;
+  winning_bid_amount: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Bid {
+  id: string;
+  lot_id: string;
+  recycler_id: string;
+  amount: number;
+  created_at: string;
 }
 
 export interface Inventory {
@@ -94,6 +117,8 @@ export interface Database {
       scrapers: { Row: Scraper; Insert: any; Update: any };
       recyclers: { Row: Recycler; Insert: any; Update: any };
       pickup_requests: { Row: PickupRequest; Insert: any; Update: any };
+      scrap_lots: { Row: ScrapLot; Insert: any; Update: any };
+      bids: { Row: Bid; Insert: any; Update: any };
       inventory: { Row: Inventory; Insert: any; Update: any };
       transactions: { Row: Transaction; Insert: any; Update: any };
     };

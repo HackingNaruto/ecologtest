@@ -9,7 +9,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../hooks/useRealtime';
-import { getInventory, getRecyclerByUserId, getRecyclerPickups } from '../services/supabaseApi';
+import { getInventory, getRecyclerByUserId, getRecyclerPickups, getActiveAuctions, placeBid } from '../services/supabaseApi';
 
 type Inventory = any;
 type PickupRequest = any;
@@ -39,12 +39,8 @@ export function RecyclerDashboard() {
         const inv = await getInventory(recyclerData.id);
         setInventory(inv || []);
 
-        const { data: marketplaceStream } = await supabase
-          .from('pickup_requests')
-          .select('*, profiles(full_name)')
-          .eq('status', 'aggregated');
-
-        setMarketplaceItems(marketplaceStream || []);
+        const activeLots = await getActiveAuctions();
+        setMarketplaceItems(activeLots || []);
       }
     } catch (err) {
       console.error(err);
@@ -66,14 +62,25 @@ export function RecyclerDashboard() {
     loadData();
   };
 
-  const handleBiddingMarketplace = async (id: string) => {
-    if (!recycler?.id) return;
-    await supabase
-      .from('pickup_requests')
-      .update({ status: 'delivered_to_recycler', recycler_id: recycler.id })
-      .eq('id', id);
-
-    loadData();
+  const handleBiddingMarketplace = async (lotId: string, currentBid: number) => {
+    if (!user?.id) return;
+    const bidAmount = prompt(`Current highest bid is ₹${currentBid || 0}. Enter your bid (must be higher):`);
+    if (!bidAmount) return;
+    
+    const amount = Number(bidAmount);
+    if (isNaN(amount) || amount <= (currentBid || 0)) {
+      alert("Invalid bid amount. Must be higher than the current bid.");
+      return;
+    }
+    
+    try {
+      await placeBid(lotId, user.id, amount);
+      alert("Bid placed successfully!");
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to place bid");
+    }
   };
 
   if (loading) {
@@ -145,25 +152,39 @@ export function RecyclerDashboard() {
               </GlassCard>
             ) : (
               <div className="space-y-2">
-                {marketplaceItems.map((m: any) => (
-                  <GlassCard key={m.id} className="p-4 flex justify-between items-center border border-primary/20">
-                    <div>
-                      <p className="text-sm font-medium text-primary capitalize">
-                        {m.device_type} Bulk Collection
-                      </p>
-                      <p className="text-xs text-foreground-muted">
-                        Aggregated from: {m.profiles?.full_name || 'Repair Station'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleBiddingMarketplace(m.id)}
-                      className="btn-primary text-xs py-1 px-4 flex items-center gap-1"
-                    >
-                      <ShoppingBag size={12} />
-                      Acquire Lot
-                    </button>
-                  </GlassCard>
-                ))}
+                {marketplaceItems.map((m: any) => {
+                  const timeLeft = Math.max(0, new Date(m.auction_end_time).getTime() - Date.now());
+                  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                  const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                  
+                  return (
+                    <GlassCard key={m.id} className="p-4 flex justify-between items-center border border-primary/20">
+                      <div>
+                        <p className="text-sm font-medium text-primary capitalize">
+                          {m.category.replace(/_/g, ' ')}
+                        </p>
+                        <p className="text-xs text-foreground-muted">
+                          {m.weight_kg} kg · Base: ₹{m.base_price}
+                        </p>
+                        <p className="text-xs text-foreground-subtle mt-1">
+                          By: {m.profiles?.full_name || 'Verified Scraper'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-amber-400 mb-2">
+                          {hoursLeft}h {minsLeft}m left
+                        </p>
+                        <button
+                          onClick={() => handleBiddingMarketplace(m.id, m.winning_bid_amount || m.base_price)}
+                          className="btn-primary text-xs py-1.5 px-4 flex items-center gap-1"
+                        >
+                          <ShoppingBag size={14} />
+                          Place Bid
+                        </button>
+                      </div>
+                    </GlassCard>
+                  );
+                })}
               </div>
             )}
           </div>

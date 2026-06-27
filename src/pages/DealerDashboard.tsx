@@ -25,9 +25,11 @@ import {
   getScraperByUserId,
   updatePickupStatus,
   updateScraperLocation,
+  getScraperLots
 } from '../services/supabaseApi';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database';
+import { CreateLotModal } from '../components/ui/CreateLotModal';
 
 type PickupRequest = Database['public']['Tables']['pickup_requests']['Row'] & {
   phone?: string | null;
@@ -41,6 +43,8 @@ export default function DealerDashboard() {
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [scraperProfile, setScraperProfile] = useState<any>(null);
   const [recyclers, setRecyclers] = useState<Recycler[]>([]);
+  const [scraperLots, setScraperLots] = useState<any[]>([]);
+  const [isCreateLotOpen, setIsCreateLotOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [deliveringId, setDeliveringId] = useState<string | null>(null);
@@ -62,6 +66,11 @@ export default function DealerDashboard() {
       setPickups(pickupsData);
       setScraperProfile(scraperData);
       setRecyclers((recyclerData.data as Recycler[]) || []);
+      
+      if (user.id) {
+        const lots = await getScraperLots(user.id);
+        setScraperLots(lots);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -175,8 +184,14 @@ export default function DealerDashboard() {
         <StatCard title="Active Jobs" value={activeJobs.length} icon={Truck} />
         <StatCard title="Delivered" value={deliveredJobs.length} icon={CheckCircle} />
         <StatCard title="Total Earnings" value={`₹${totalEarnings}`} icon={DollarSign} />
-        <StatCard title="Rating" value="4.9" subtitle="Average customer rating" icon={Star} />
+        <StatCard title="Active Auctions" value={scraperLots.filter(l => l.status === 'open_for_bids').length} icon={PackageCheck} />
       </div>
+
+      <CreateLotModal 
+        isOpen={isCreateLotOpen} 
+        onClose={() => setIsCreateLotOpen(false)} 
+        onSuccess={loadData} 
+      />
 
       {/* Deliver to recycler modal */}
       {deliveringId && (
@@ -235,9 +250,73 @@ export default function DealerDashboard() {
 
 
 
+      <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="section-title">My Scrap Lots (Auctions)</h2>
+            <button 
+              onClick={() => setIsCreateLotOpen(true)}
+              className="btn-primary text-sm py-1.5"
+            >
+              + Create Lot
+            </button>
+          </div>
+
+          {scraperLots.length === 0 ? (
+            <GlassCard>
+              <p className="text-center text-foreground-muted py-8">
+                You haven't created any auction lots yet.
+              </p>
+            </GlassCard>
+          ) : (
+            <div className="space-y-3">
+              {scraperLots.map((lot, i) => {
+                const timeLeft = Math.max(0, new Date(lot.auction_end_time).getTime() - Date.now());
+                const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                
+                return (
+                  <motion.div
+                    key={lot.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="glass-card p-4 glass-card-hover"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium capitalize">
+                            {lot.category.replace(/_/g, ' ')}
+                          </p>
+                          <StatusBadge status={lot.status} />
+                        </div>
+                        <p className="text-xs text-foreground-muted mt-1">
+                          {lot.weight_kg} kg • Base: ₹{lot.base_price}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-primary">
+                          Highest Bid: ₹{lot.winning_bid_amount || 0}
+                        </p>
+                        {lot.status === 'open_for_bids' && (
+                          <p className="text-xs text-amber-400 mt-1">
+                            {hoursLeft}h {minsLeft}m remaining
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="section-title">Active Jobs</h2>
+          <h2 className="section-title">Drop-off Jobs</h2>
 
           {activeJobs.length === 0 ? (
             <GlassCard>

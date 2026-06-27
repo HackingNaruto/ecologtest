@@ -244,3 +244,104 @@ export const getInventory = async (recyclerId?: string) => {
   if (error) return [];
   return data || [];
 };
+
+// ================= AUCTION SYSTEM (ECOLOG V2) =================
+
+export const createScrapLot = async (
+  scraperId: string,
+  category: string,
+  weightKg: number,
+  basePrice: number,
+  durationMinutes: number
+) => {
+  const endTime = new Date(Date.now() + durationMinutes * 60000).toISOString();
+  
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .insert({
+      scraper_id: scraperId,
+      category,
+      weight_kg: weightKg,
+      base_price: basePrice,
+      status: "open_for_bids",
+      auction_end_time: endTime
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getActiveAuctions = async () => {
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .select("*, profiles!scrap_lots_scraper_id_fkey(full_name)")
+    .eq("status", "open_for_bids")
+    .gt("auction_end_time", new Date().toISOString())
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return data || [];
+};
+
+export const getScraperLots = async (scraperId: string) => {
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .select("*")
+    .eq("scraper_id", scraperId)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return data || [];
+};
+
+export const placeBid = async (
+  lotId: string,
+  recyclerId: string,
+  amount: number
+) => {
+  const { data, error } = await supabase
+    .from("bids")
+    .insert({
+      lot_id: lotId,
+      recycler_id: recyclerId,
+      amount
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getBidsForLot = async (lotId: string) => {
+  const { data, error } = await supabase
+    .from("bids")
+    .select("*, profiles!bids_recycler_id_fkey(full_name)")
+    .eq("lot_id", lotId)
+    .order("amount", { ascending: false });
+
+  if (error) return [];
+  return data || [];
+};
+
+export const closeAuction = async (
+  lotId: string,
+  winnerId: string,
+  winningAmount: number
+) => {
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .update({
+      status: "completed",
+      winner_recycler_id: winnerId,
+      winning_bid_amount: winningAmount
+    })
+    .eq("id", lotId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
