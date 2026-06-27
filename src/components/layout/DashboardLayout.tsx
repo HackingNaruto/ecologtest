@@ -25,7 +25,7 @@ const getNavItems = (role?: string) => {
   const base = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['customer', 'admin'] },
     { label: 'Device Valuation', path: '/valuation', icon: Smartphone, roles: ['customer', 'admin'] },
-    { label: 'Pickup Requests', path: '/pickups', icon: Truck, roles: ['customer', 'scraper', 'admin'] },
+    { label: 'Drop-off Requests', path: '/pickups', icon: Truck, roles: ['customer', 'scraper', 'admin'] },
     { label: 'Supply Chain', path: '/supply-chain', icon: Route, roles: ['customer', 'admin'] },
     { label: 'Impact Analytics', path: '/impact', icon: BarChart3, roles: ['customer', 'recycler', 'admin'] },
     { label: 'Settings', path: '/settings', icon: Settings, roles: ['customer', 'scraper', 'recycler', 'admin'] },
@@ -33,7 +33,7 @@ const getNavItems = (role?: string) => {
 
 const scraperItems = [
   { label: 'Dashboard', path: '/dealer-dashboard', icon: LayoutDashboard, roles: ['scraper', 'admin'] },
-  { label: 'Pickup Requests', path: '/scraper-dashboard', icon: Truck, roles: ['scraper', 'admin'] }, // ← fixed
+  { label: 'Drop-off Requests', path: '/scraper-dashboard', icon: Truck, roles: ['scraper', 'admin'] }, // ← fixed
   { label: 'Settings', path: '/settings', icon: Settings, roles: ['scraper', 'admin'] },
 ];
 
@@ -46,7 +46,7 @@ const scraperItems = [
   const adminItems = [
     { label: 'Admin Panel', path: '/admin', icon: ShieldCheck, roles: ['admin'] },
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['admin'] },
-    { label: 'Pickup Requests', path: '/pickups', icon: Truck, roles: ['admin'] },
+    { label: 'Drop-off Requests', path: '/pickups', icon: Truck, roles: ['admin'] },
     { label: 'Settings', path: '/settings', icon: Settings, roles: ['admin'] },
   ];
 

@@ -23,7 +23,7 @@ const features = [
   },
   {
     icon: Truck,
-    title: 'Seamless Pickup',
+    title: 'Seamless Drop-off',
     description: 'Schedule doorstep collection with verified scrap dealers in your area.',
   },
   {
@@ -48,7 +48,7 @@ const stats = [
 const steps = [
   { step: '01', title: 'Register Device', desc: 'Upload details and photos of your e-waste' },
   { step: '02', title: 'Get Valuation', desc: 'Receive an instant AI-powered market estimate' },
-  { step: '03', title: 'Schedule Pickup', desc: 'Book a convenient collection time' },
+  { step: '03', title: 'Schedule Drop-off', desc: 'Find a convenient drop-off location' },
   { step: '04', title: 'Track Impact', desc: 'Follow your device and see your environmental impact' },
 ];
 
@@ -126,7 +126,7 @@ export function Landing() {
                 {[
                   { label: 'Devices', value: '5', sub: 'Registered', icon: Smartphone },
                   { label: 'Total Value', value: '$1,735', sub: 'Estimated', icon: Zap },
-                  { label: 'Pickups', value: '2', sub: 'Scheduled', icon: Truck },
+                  { label: 'Drop-offs', value: '2', sub: 'Scheduled', icon: Truck },
                   { label: 'CO2 Saved', value: '42kg', sub: 'This month', icon: Globe },
                 ].map((item, i) => {
                   const Icon = item.icon;

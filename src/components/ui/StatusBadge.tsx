@@ -1,5 +1,12 @@
 import { cn } from '../../lib/utils';
 
+const statusDisplay: Record<string, string> = {
+  'pickup_scheduled': 'drop-off scheduled',
+  'on_the_way': 'awaiting drop-off',
+  'picked_up': 'received at shop',
+  'requested': 'requested',
+};
+
 const statusStyles: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   confirmed: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
@@ -30,7 +37,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const style = statusStyles[status] || 'bg-surface-elevated text-foreground-muted border-border';
   return (
     <span className={cn('inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border capitalize', style, className)}>
-      {status.replace(/_/g, ' ')}
+      {statusDisplay[status] || status.replace(/_/g, ' ')}
     </span>
   );
 }

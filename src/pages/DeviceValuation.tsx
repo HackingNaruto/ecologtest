@@ -170,7 +170,7 @@ export function DeviceValuation() {
     // Simulate async data post synchronization to your backend systems
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
-    alert(`Pickup Registered!\nYour ${formData.brand} ${formData.model} has been booked for valuation recovery at an approximate rate of ${formatCurrency(valuation.estimatedValue)}.`);
+    alert(`Drop-off Registered!\nYour ${formData.brand} ${formData.model} has been booked for drop-off at an estimated rate of ${formatCurrency(valuation.estimatedValue)}.`);
     
     setPickupScheduling(false);
     resetForm();
@@ -415,7 +415,7 @@ export function DeviceValuation() {
                       </>
                     ) : (
                       <>
-                        Schedule Pickup <ArrowRight size={16} />
+                        Schedule Drop-off <ArrowRight size={16} />
                       </>
                     )}
                   </button>

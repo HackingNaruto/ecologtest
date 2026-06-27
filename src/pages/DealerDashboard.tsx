@@ -293,6 +293,22 @@ export default function DealerDashboard() {
                         Accept Request
                       </button>
                     )}
+                    {job.status === 'assigned' && (
+                      <button
+                        onClick={() => handleStatusUpdate(job.id, 'picked_up')}
+                        className="btn-primary text-sm py-1.5 flex-1"
+                      >
+                        Mark as Received
+                      </button>
+                    )}
+                    {job.status === 'picked_up' && (
+                      <button
+                        onClick={() => openDeliverModal(job.id)}
+                        className="btn-secondary text-sm py-1.5 flex-1"
+                      >
+                        Deliver to Recycler
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}
