@@ -169,7 +169,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                   <X size={20} className="text-foreground-muted" />
                 </button>
               </div>
-              <nav className="flex-1 px-3 space-y-1">
+              <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
                 {navItems.map((item) => {
                   const active = location.pathname === item.path;
                   return (
@@ -212,7 +212,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <Leaf className="text-primary" size={18} />
               <span className="font-semibold text-foreground">EcoLog</span>
             </Link>
-            <div className="w-8" />
+            <button onClick={handleLogout} className="p-2 rounded-lg hover:bg-white/[0.05] text-red-400">
+              <LogOut size={20} />
+            </button>
           </div>
         </div>
 
