@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { LayoutDashboard, Recycle, Scale, CheckCircle, Package, ShoppingBag } from 'lucide-react';
@@ -16,6 +17,7 @@ type PickupRequest = any;
 
 export function RecyclerDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [inventory, setInventory] = useState<Inventory[]>([]);
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [recycler, setRecycler] = useState<any>(null);
@@ -39,7 +41,7 @@ export function RecyclerDashboard() {
         const inv = await getInventory(recyclerData.id);
         setInventory(inv || []);
 
-        const activeLots = await getActiveAuctions();
+        const activeLots = await getUpcomingAndLiveAuctions();
         setMarketplaceItems(activeLots || []);
       }
     } catch (err) {
@@ -62,25 +64,16 @@ export function RecyclerDashboard() {
     loadData();
   };
 
-  const handleBiddingMarketplace = async (lotId: string, currentBid: number) => {
-    if (!user?.id) return;
-    const bidAmount = prompt(`Current highest bid is ₹${currentBid || 0}. Enter your bid (must be higher):`);
-    if (!bidAmount) return;
-    
-    const amount = Number(bidAmount);
-    if (isNaN(amount) || amount <= (currentBid || 0)) {
-      alert("Invalid bid amount. Must be higher than the current bid.");
-      return;
-    }
-    
-    try {
-      await placeBid(lotId, user.id, amount);
-      alert("Bid placed successfully!");
-      loadData();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to place bid");
-    }
+  const [currentTime, setCurrentTime] = useState(Date.now());
+  
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleJoinAuction = (lotId: string, isStarted: boolean) => {
+    if (!isStarted) return;
+    navigate(`/auction/${lotId}`);
   };
 
   if (loading) {
@@ -153,33 +146,49 @@ export function RecyclerDashboard() {
             ) : (
               <div className="space-y-2">
                 {marketplaceItems.map((m: any) => {
-                  const timeLeft = Math.max(0, new Date(m.auction_end_time).getTime() - Date.now());
-                  const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-                  const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                  const startTime = new Date(m.scheduled_start_time).getTime();
+                  const isStarted = currentTime >= startTime;
+
+                  const timeUntilStart = Math.max(0, startTime - currentTime);
+                  const hoursLeft = Math.floor(timeUntilStart / (1000 * 60 * 60));
+                  const minsLeft = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
+                  const secsLeft = Math.floor((timeUntilStart % (1000 * 60)) / 1000);
                   
                   return (
                     <GlassCard key={m.id} className="p-4 flex justify-between items-center border border-primary/20">
                       <div>
-                        <p className="text-sm font-medium text-primary capitalize">
-                          {m.category.replace(/_/g, ' ')}
-                        </p>
-                        <p className="text-xs text-foreground-muted">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-primary capitalize">
+                            {m.category.replace(/_/g, ' ')}
+                          </p>
+                          <StatusBadge status={m.status} />
+                        </div>
+                        <p className="text-xs text-foreground-muted mt-1">
                           {m.weight_kg} kg · Base: ₹{m.base_price}
                         </p>
                         <p className="text-xs text-foreground-subtle mt-1">
                           By: {m.profiles?.full_name || 'Verified Scraper'}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-amber-400 mb-2">
-                          {hoursLeft}h {minsLeft}m left
-                        </p>
+                      <div className="text-right flex flex-col items-end gap-2">
+                        {isStarted ? (
+                           <p className="text-sm font-bold text-red-500 animate-pulse">
+                             Live Now!
+                           </p>
+                        ) : (
+                          <p className="text-sm font-bold text-amber-400">
+                            Starts in: {hoursLeft}h {minsLeft}m {secsLeft}s
+                          </p>
+                        )}
                         <button
-                          onClick={() => handleBiddingMarketplace(m.id, m.winning_bid_amount || m.base_price)}
-                          className="btn-primary text-xs py-1.5 px-4 flex items-center gap-1"
+                          onClick={() => handleJoinAuction(m.id, isStarted)}
+                          disabled={!isStarted}
+                          className={`text-xs py-1.5 px-4 flex items-center gap-1 ${
+                            isStarted ? 'btn-primary' : 'bg-gray-600 text-gray-400 cursor-not-allowed rounded-md'
+                          }`}
                         >
                           <ShoppingBag size={14} />
-                          Place Bid
+                          Join Bid
                         </button>
                       </div>
                     </GlassCard>

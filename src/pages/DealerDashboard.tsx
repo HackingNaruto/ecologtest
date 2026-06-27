@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -39,6 +40,7 @@ type Recycler = { id: string; company_name: string | null };
 export default function DealerDashboard() {
   const { user } = useAuth();
   const { requestLocation } = useGeolocation();
+  const navigate = useNavigate();
 
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [scraperProfile, setScraperProfile] = useState<any>(null);
@@ -271,9 +273,9 @@ export default function DealerDashboard() {
           ) : (
             <div className="space-y-3">
               {scraperLots.map((lot, i) => {
-                const timeLeft = Math.max(0, new Date(lot.auction_end_time).getTime() - Date.now());
-                const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
-                const minsLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const startTime = new Date(lot.scheduled_start_time).getTime();
+                const now = Date.now();
+                const isStarted = now >= startTime;
                 
                 return (
                   <motion.div
@@ -295,14 +297,24 @@ export default function DealerDashboard() {
                           {lot.weight_kg} kg • Base: ₹{lot.base_price}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-primary">
-                          Highest Bid: ₹{lot.winning_bid_amount || 0}
-                        </p>
-                        {lot.status === 'open_for_bids' && (
-                          <p className="text-xs text-amber-400 mt-1">
-                            {hoursLeft}h {minsLeft}m remaining
+                      <div className="text-right flex flex-col items-end gap-2">
+                        {lot.status === 'completed' ? (
+                          <p className="text-sm font-semibold text-primary">
+                            Sold for: ₹{lot.winning_bid_amount || 0}
                           </p>
+                        ) : (
+                          <p className="text-sm font-medium">
+                            Starts at: {new Date(lot.scheduled_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
+                        
+                        {(lot.status === 'scheduled' || lot.status === 'live' || lot.status === 'open_for_bids') && (
+                          <button
+                            onClick={() => navigate(`/auction/${lot.id}`)}
+                            className="btn-primary text-xs py-1 px-4"
+                          >
+                            Enter Live Room
+                          </button>
                         )}
                       </div>
                     </div>

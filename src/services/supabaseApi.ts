@@ -252,10 +252,8 @@ export const createScrapLot = async (
   category: string,
   weightKg: number,
   basePrice: number,
-  durationMinutes: number
+  scheduledStartTime: string
 ) => {
-  const endTime = new Date(Date.now() + durationMinutes * 60000).toISOString();
-  
   const { data, error } = await supabase
     .from("scrap_lots")
     .insert({
@@ -263,8 +261,9 @@ export const createScrapLot = async (
       category,
       weight_kg: weightKg,
       base_price: basePrice,
-      status: "open_for_bids",
-      auction_end_time: endTime
+      status: "scheduled",
+      scheduled_start_time: scheduledStartTime,
+      auction_end_time: null
     })
     .select()
     .single();
@@ -273,16 +272,50 @@ export const createScrapLot = async (
   return data;
 };
 
-export const getActiveAuctions = async () => {
+export const getUpcomingAndLiveAuctions = async () => {
   const { data, error } = await supabase
     .from("scrap_lots")
     .select("*, profiles!scrap_lots_scraper_id_fkey(full_name)")
-    .eq("status", "open_for_bids")
-    .gt("auction_end_time", new Date().toISOString())
-    .order("created_at", { ascending: false });
+    .in("status", ["scheduled", "live", "open_for_bids"])
+    .order("scheduled_start_time", { ascending: true });
 
   if (error) return [];
   return data || [];
+};
+
+export const getLotById = async (lotId: string) => {
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .select("*, profiles!scrap_lots_scraper_id_fkey(full_name)")
+    .eq("id", lotId)
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateLotStatus = async (lotId: string, status: string, endTime?: string) => {
+  const updatePayload: any = { status };
+  if (endTime) {
+    updatePayload.auction_end_time = endTime;
+  }
+  
+  const { data, error } = await supabase
+    .from("scrap_lots")
+    .update(updatePayload)
+    .eq("id", lotId);
+
+  if (error) throw error;
+  return data;
+};
+
+export const closeAuctionSecurely = async (lotId: string) => {
+  const { data, error } = await supabase.rpc("close_auction_securely", {
+    target_lot_id: lotId
+  });
+
+  if (error) throw error;
+  return data;
 };
 
 export const getScraperLots = async (scraperId: string) => {

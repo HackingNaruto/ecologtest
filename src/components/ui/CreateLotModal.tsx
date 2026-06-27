@@ -16,7 +16,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
     category: 'mixed_electronics',
     weightKg: 10,
     basePrice: 500,
-    durationMinutes: 60,
+    scheduledStartTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // default 1 hr from now
   });
 
   if (!isOpen) return null;
@@ -32,7 +32,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
         formData.category,
         formData.weightKg,
         formData.basePrice,
-        formData.durationMinutes
+        new Date(formData.scheduledStartTime).toISOString()
       );
       onSuccess();
       onClose();
@@ -97,18 +97,16 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
           </div>
 
           <div>
-            <label className="label">Auction Duration (Minutes)</label>
+            <label className="label">Scheduled Start Time</label>
             <input
-              type="number"
+              type="datetime-local"
               required
-              min="5"
-              max="1440"
-              value={formData.durationMinutes}
-              onChange={e => setFormData({ ...formData, durationMinutes: Number(e.target.value) })}
+              value={formData.scheduledStartTime}
+              onChange={e => setFormData({ ...formData, scheduledStartTime: e.target.value })}
               className="input-field"
             />
             <p className="text-xs text-foreground-subtle mt-1">
-              Recyclers can bid on this lot until the timer runs out.
+              Recyclers will be notified and can join the Live Bidding Room at this exact time.
             </p>
           </div>
 
@@ -117,7 +115,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
             disabled={loading}
             className="w-full btn-primary flex justify-center items-center gap-2 mt-4"
           >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Publish to Auction'}
+            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Schedule Auction'}
           </button>
         </form>
       </div>

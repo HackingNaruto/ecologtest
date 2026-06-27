@@ -72,8 +72,9 @@ export interface ScrapLot {
   category: string;
   weight_kg: number;
   base_price: number;
-  status: 'open_for_bids' | 'completed' | 'paid';
-  auction_end_time: string;
+  status: 'scheduled' | 'live' | 'open_for_bids' | 'completed' | 'paid';
+  scheduled_start_time: string | null;
+  auction_end_time: string | null;
   winner_recycler_id: string | null;
   winning_bid_amount: number | null;
   created_at: string;
