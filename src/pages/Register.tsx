@@ -13,6 +13,8 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<ProfileRole>('customer');
+  const [shopName, setShopName] = useState('');
+  const [shopAddress, setShopAddress] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false); // ✅ Added state to track successful signups
@@ -28,7 +30,7 @@ export function Register() {
     setError("");
 
     try {
-      await register(email, password, name, role);
+      await register(email, password, name, role, shopName, shopAddress);
       setIsSuccess(true); // ✅ SUCCESS: Switch UI view instead of navigating to login instantly!
     } catch (err: any) {
       setError(err.message);
@@ -159,6 +161,44 @@ export function Register() {
             })}
           </div>
         </div>
+
+        {/* SCRAPER ONLY FIELDS */}
+        {role === 'scraper' && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="space-y-4 pt-2"
+          >
+            <div>
+              <label className="block text-sm font-medium mb-1">Shop Name</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                <input
+                  type="text"
+                  value={shopName}
+                  onChange={(e) => setShopName(e.target.value)}
+                  className="input-field pl-10"
+                  placeholder="Your Shop Name"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Shop Address</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                <input
+                  type="text"
+                  value={shopAddress}
+                  onChange={(e) => setShopAddress(e.target.value)}
+                  className="input-field pl-10"
+                  placeholder="Drop-off location address"
+                  required
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* SUBMIT */}
         <button

@@ -18,7 +18,9 @@ interface AuthContextType {
     email: string,
     password: string,
     fullName: string,
-    role: Profile["role"]
+    role: Profile["role"],
+    shopName?: string,
+    shopAddress?: string
   ) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (updates: Partial<Profile>) => Promise<void>;
@@ -119,7 +121,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string,
       password: string,
       fullName: string,
-      role: Profile["role"]
+      role: Profile["role"],
+      shopName?: string,
+      shopAddress?: string
     ) => {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -128,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             full_name: fullName,
             role,
+            shop_name: shopName,
+            shop_address: shopAddress
           },
         },
       });

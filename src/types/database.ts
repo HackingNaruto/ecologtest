@@ -25,6 +25,7 @@ export interface Profile {
 export interface Scraper {
   id: string;
   user_id: string;
+  shop_name: string | null;
   aadhaar_number: string | null;
   address: string | null;
   vehicle_type: string | null;
