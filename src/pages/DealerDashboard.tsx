@@ -157,6 +157,13 @@ export default function DealerDashboard() {
 
   const handleAcceptJob = async (pickupId: string) => {
     if (!user) return;
+    
+    const confirmAccept = window.confirm(
+      "DISCLAIMER:\n\nBy accepting this request, you are committing to inspect and purchase this item when the user drops it off at your location. Do you agree to proceed?"
+    );
+
+    if (!confirmAccept) return;
+
     try {
       const { error } = await supabase
         .from('pickup_requests')
@@ -466,12 +473,20 @@ export default function DealerDashboard() {
 
                   <div className="flex shrink-0">
                     {job.status === 'requested' && (
-                      <button
-                        onClick={() => handleAcceptJob(job.id)}
-                        className="btn-primary text-xs py-1.5 px-3"
-                      >
-                        Accept
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/scraper-request/${job.id}`)}
+                          className="btn-secondary text-xs py-1.5 px-3"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleAcceptJob(job.id)}
+                          className="btn-primary text-xs py-1.5 px-3"
+                        >
+                          Accept
+                        </button>
+                      </div>
                     )}
                     {job.status === 'assigned' && (
                       <button
