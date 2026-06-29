@@ -226,7 +226,7 @@ export default function DealerDashboard() {
         <StatCard title="Active Jobs" value={activeJobs.length} icon={Truck} />
         <StatCard title="Delivered" value={deliveredJobs.length} icon={CheckCircle} />
         <StatCard title="Total Earnings" value={`₹${totalEarnings}`} icon={DollarSign} />
-        <StatCard title="Active Auctions" value={scraperLots.filter(l => l.status === 'open_for_bids').length} icon={PackageCheck} />
+        <StatCard title="Active Listings" value={scraperLots.filter(l => l.status === 'available').length} icon={PackageCheck} />
       </div>
 
       <CreateLotModal 
@@ -348,7 +348,7 @@ export default function DealerDashboard() {
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex justify-between items-center">
-            <h2 className="section-title">My Scrap Lots (Auctions)</h2>
+            <h2 className="section-title">My Marketplace Listings</h2>
             <button 
               onClick={() => setIsCreateLotOpen(true)}
               className="btn-primary text-sm py-1.5"
@@ -360,7 +360,7 @@ export default function DealerDashboard() {
           {scraperLots.length === 0 ? (
             <GlassCard>
               <p className="text-center text-foreground-muted py-8">
-                You haven't created any auction lots yet.
+                You haven't created any marketplace lots yet.
               </p>
             </GlassCard>
           ) : (
