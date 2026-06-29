@@ -79,14 +79,26 @@ export const createPickupRequest = async (payload: any) => {
 };
 
 export const getAssignedPickups = async (userId: string) => {
-  const { data, error } = await supabase
+  // Get requests assigned to this scraper
+  const { data: assignedData } = await supabase
     .from("pickup_requests")
     .select("*")
     .eq("scraper_id", userId)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
-  return data || [];
+  // Get all new unassigned requests (status = 'requested') visible to all scrapers
+  const { data: newRequests } = await supabase
+    .from("pickup_requests")
+    .select("*")
+    .eq("status", "requested")
+    .is("scraper_id", null)
+    .order("created_at", { ascending: false });
+
+  // Combine: assigned jobs first, then unassigned new requests
+  const combined = [...(assignedData || []), ...(newRequests || [])];
+  // Remove duplicates by id
+  const unique = Array.from(new Map(combined.map(p => [p.id, p])).values());
+  return unique;
 };
 
 export const updatePickupStatus = async (id: string, status: string) => {
