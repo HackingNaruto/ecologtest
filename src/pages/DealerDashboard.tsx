@@ -53,6 +53,10 @@ export default function DealerDashboard() {
   const [selectedRecyclerId, setSelectedRecyclerId] = useState('');
   const [delivering, setDelivering] = useState(false);
 
+  const [payoutJobId, setPayoutJobId] = useState<string | null>(null);
+  const [payoutAmount, setPayoutAmount] = useState<string>('');
+  const [processingPayout, setProcessingPayout] = useState(false);
+
   const loadData = async () => {
     if (!user) return;
     setLoading(true);
@@ -112,6 +116,42 @@ export default function DealerDashboard() {
       loadData();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handlePayoutUser = async () => {
+    if (!payoutJobId || !payoutAmount) return;
+    setProcessingPayout(true);
+    
+    // Simulating Razorpay integration & Platform Fee logic
+    // Real implementation would create a Razorpay order, open Checkout, and capture.
+    const amount = Number(payoutAmount);
+    const platformFee = amount * 0.05; // 5% fee
+    const userReceives = amount - platformFee;
+    
+    // Simulate network delay
+    await new Promise(r => setTimeout(r, 1500));
+    
+    try {
+      // Complete the job with the custom payment details
+      await supabase
+        .from('pickup_requests')
+        .update({ 
+          status: 'completed',
+          pickup_fee: amount // Using this column to store the amount
+        })
+        .eq('id', payoutJobId);
+        
+      alert(`Payment Successful!\nYou paid: ₹${amount}\nPlatform Fee: ₹${platformFee}\nUser Received: ₹${userReceives}`);
+      
+      setPayoutJobId(null);
+      setPayoutAmount('');
+      loadData();
+    } catch (error) {
+      console.error(error);
+      alert('Failed to process payout.');
+    } finally {
+      setProcessingPayout(false);
     }
   };
 
@@ -250,7 +290,60 @@ export default function DealerDashboard() {
         </div>
       )}
 
+      {/* Payout to User Modal */}
+      {payoutJobId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-background border border-border p-6 rounded-2xl w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Pay User & Complete</h3>
+              <button onClick={() => setPayoutJobId(null)} className="text-foreground-muted hover:text-foreground">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-sm text-foreground-subtle mb-4">
+              Inspect the item and negotiate the final price with the user. Enter the agreed amount below.
+            </p>
+            
+            <div className="mb-4">
+              <label className="label">Final Negotiated Amount (₹)</label>
+              <input 
+                type="number"
+                min="0"
+                value={payoutAmount}
+                onChange={(e) => setPayoutAmount(e.target.value)}
+                className="input-field text-xl font-bold"
+                placeholder="e.g. 500"
+              />
+            </div>
+            
+            {payoutAmount && !isNaN(Number(payoutAmount)) && (
+              <div className="bg-background-elevated p-3 rounded-lg mb-4 text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-foreground-subtle">Base Amount:</span>
+                  <span>₹{Number(payoutAmount)}</span>
+                </div>
+                <div className="flex justify-between text-red-400">
+                  <span>Platform Fee (5%):</span>
+                  <span>-₹{(Number(payoutAmount) * 0.05).toFixed(2)}</span>
+                </div>
+                <div className="border-t border-border pt-2 flex justify-between font-bold text-green-500">
+                  <span>User Receives:</span>
+                  <span>₹{(Number(payoutAmount) * 0.95).toFixed(2)}</span>
+                </div>
+              </div>
+            )}
 
+            <button
+              onClick={handlePayoutUser}
+              disabled={processingPayout || !payoutAmount || isNaN(Number(payoutAmount)) || Number(payoutAmount) <= 0}
+              className="btn-primary w-full flex items-center justify-center gap-2"
+            >
+              {processingPayout ? 'Processing Payment...' : 'Pay via Razorpay'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         <div className="lg:col-span-2 space-y-4">
@@ -273,10 +366,6 @@ export default function DealerDashboard() {
           ) : (
             <div className="space-y-3">
               {scraperLots.map((lot, i) => {
-                const startTime = new Date(lot.scheduled_start_time).getTime();
-                const now = Date.now();
-                const isStarted = now >= startTime;
-                
                 return (
                   <motion.div
                     key={lot.id}
@@ -298,24 +387,22 @@ export default function DealerDashboard() {
                         </p>
                       </div>
                       <div className="text-right flex flex-col items-end gap-2">
-                        {lot.status === 'completed' ? (
+                        {lot.status === 'sold' ? (
                           <p className="text-sm font-semibold text-primary">
-                            Sold for: ₹{lot.winning_bid_amount || 0}
+                            Sold!
                           </p>
                         ) : (
-                          <p className="text-sm font-medium">
-                            Starts at: {new Date(lot.scheduled_start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <p className="text-sm font-medium text-foreground-muted">
+                            Awaiting Recyclers
                           </p>
                         )}
                         
-                        {(lot.status === 'scheduled' || lot.status === 'live' || lot.status === 'open_for_bids') && (
-                          <button
-                            onClick={() => navigate(`/auction/${lot.id}`)}
-                            className="btn-primary text-xs py-1 px-4"
-                          >
-                            Enter Live Room
-                          </button>
-                        )}
+                        <button
+                          onClick={() => navigate(`/negotiation/${lot.id}`)}
+                          className="btn-primary text-xs py-1 px-4"
+                        >
+                          View Chats
+                        </button>
                       </div>
                     </div>
                   </motion.div>
@@ -386,10 +473,10 @@ export default function DealerDashboard() {
                     )}
                     {job.status === 'assigned' && (
                       <button
-                        onClick={() => handleStatusUpdate(job.id, 'picked_up')}
-                        className="btn-primary text-sm py-1.5 flex-1"
+                        onClick={() => setPayoutJobId(job.id)}
+                        className="btn-primary text-sm py-1.5 flex-1 flex items-center justify-center gap-2"
                       >
-                        Mark as Received
+                        <DollarSign size={16} /> Pay User & Receive
                       </button>
                     )}
                     {job.status === 'picked_up' && (

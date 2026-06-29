@@ -39,6 +39,12 @@ export function ScraperRequestView() {
   const acceptRequest = async () => {
     if (!user) return;
     
+    const confirmAccept = window.confirm(
+      "DISCLAIMER:\n\nBy accepting this request, you are committing to inspect and purchase this item when the user drops it off at your location. Do you agree to proceed?"
+    );
+
+    if (!confirmAccept) return;
+
     await updatePickupStatus(request.id, "assigned");
     await supabase
       .from("pickup_requests")

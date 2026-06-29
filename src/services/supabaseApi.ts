@@ -252,7 +252,7 @@ export const createScrapLot = async (
   category: string,
   weightKg: number,
   basePrice: number,
-  scheduledStartTime: string
+  description: string
 ) => {
   const { data, error } = await supabase
     .from("scrap_lots")
@@ -261,9 +261,8 @@ export const createScrapLot = async (
       category,
       weight_kg: weightKg,
       base_price: basePrice,
-      status: "scheduled",
-      scheduled_start_time: scheduledStartTime,
-      auction_end_time: null
+      description,
+      status: "available"
     })
     .select()
     .single();
@@ -272,12 +271,12 @@ export const createScrapLot = async (
   return data;
 };
 
-export const getUpcomingAndLiveAuctions = async () => {
+export const getAvailableLots = async () => {
   const { data, error } = await supabase
     .from("scrap_lots")
     .select("*, profiles!scrap_lots_scraper_id_fkey(full_name)")
-    .in("status", ["scheduled", "live", "open_for_bids"])
-    .order("scheduled_start_time", { ascending: true });
+    .in("status", ["available", "negotiating"])
+    .order("created_at", { ascending: false });
 
   if (error) return [];
   return data || [];
@@ -376,5 +375,58 @@ export const closeAuction = async (
     .single();
 
   if (error) throw error;
+  return data;
+};
+
+export const sendMessage = async (
+  lotId: string,
+  senderId: string,
+  receiverId: string,
+  message: string
+) => {
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      lot_id: lotId,
+      sender_id: senderId,
+      receiver_id: receiverId,
+      message
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const getMessagesForLot = async (lotId: string) => {
+  const { data, error } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("lot_id", lotId)
+    .order("created_at", { ascending: true });
+
+  if (error) return [];
+  return data || [];
+};
+
+export const startNegotiation = async (
+  lotId: string,
+  scraperId: string,
+  recyclerId: string
+) => {
+  await updateLotStatus(lotId, "negotiating");
+  
+  const { data, error } = await supabase
+    .from("negotiations")
+    .insert({
+      lot_id: lotId,
+      scraper_id: scraperId,
+      recycler_id: recyclerId,
+      status: "active"
+    })
+    .select()
+    .single();
+    
   return data;
 };

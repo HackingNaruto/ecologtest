@@ -10,7 +10,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../hooks/useRealtime';
-import { getInventory, getRecyclerByUserId, getRecyclerPickups, getActiveAuctions, placeBid } from '../services/supabaseApi';
+import { getInventory, getRecyclerByUserId, getRecyclerPickups, getAvailableLots, startNegotiation } from '../services/supabaseApi';
 
 type Inventory = any;
 type PickupRequest = any;
@@ -41,8 +41,8 @@ export function RecyclerDashboard() {
         const inv = await getInventory(recyclerData.id);
         setInventory(inv || []);
 
-        const activeLots = await getUpcomingAndLiveAuctions();
-        setMarketplaceItems(activeLots || []);
+        const availableLots = await getAvailableLots();
+        setMarketplaceItems(availableLots || []);
       }
     } catch (err) {
       console.error(err);
@@ -64,16 +64,16 @@ export function RecyclerDashboard() {
     loadData();
   };
 
-  const [currentTime, setCurrentTime] = useState(Date.now());
-  
-  useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleJoinAuction = (lotId: string, isStarted: boolean) => {
-    if (!isStarted) return;
-    navigate(`/auction/${lotId}`);
+  const handleExpressInterest = async (lotId: string, scraperId: string) => {
+    if (!user) return;
+    try {
+      await startNegotiation(lotId, scraperId, user.id);
+      navigate(`/negotiation/${lotId}`);
+    } catch (err) {
+      console.error(err);
+      // If it's just a duplicate key error because they already expressed interest, we can just navigate
+      navigate(`/negotiation/${lotId}`);
+    }
   };
 
   if (loading) {
@@ -145,55 +145,38 @@ export function RecyclerDashboard() {
               </GlassCard>
             ) : (
               <div className="space-y-2">
-                {marketplaceItems.map((m: any) => {
-                  const startTime = new Date(m.scheduled_start_time).getTime();
-                  const isStarted = currentTime >= startTime;
-
-                  const timeUntilStart = Math.max(0, startTime - currentTime);
-                  const hoursLeft = Math.floor(timeUntilStart / (1000 * 60 * 60));
-                  const minsLeft = Math.floor((timeUntilStart % (1000 * 60 * 60)) / (1000 * 60));
-                  const secsLeft = Math.floor((timeUntilStart % (1000 * 60)) / 1000);
-                  
-                  return (
-                    <GlassCard key={m.id} className="p-4 flex justify-between items-center border border-primary/20">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-primary capitalize">
-                            {m.category.replace(/_/g, ' ')}
-                          </p>
-                          <StatusBadge status={m.status} />
-                        </div>
-                        <p className="text-xs text-foreground-muted mt-1">
-                          {m.weight_kg} kg · Base: ₹{m.base_price}
+                {marketplaceItems.map((m: any) => (
+                  <GlassCard key={m.id} className="p-4 flex justify-between items-center border border-primary/20">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-primary capitalize">
+                          {m.category.replace(/_/g, ' ')}
                         </p>
-                        <p className="text-xs text-foreground-subtle mt-1">
-                          By: {m.profiles?.full_name || 'Verified Scraper'}
+                        <StatusBadge status={m.status} />
+                      </div>
+                      <p className="text-xs text-foreground-muted mt-1">
+                        {m.weight_kg} kg · Base: ₹{m.base_price}
+                      </p>
+                      {m.description && (
+                        <p className="text-xs text-foreground mt-1 max-w-sm truncate">
+                          "{m.description}"
                         </p>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        {isStarted ? (
-                           <p className="text-sm font-bold text-red-500 animate-pulse">
-                             Live Now!
-                           </p>
-                        ) : (
-                          <p className="text-sm font-bold text-amber-400">
-                            Starts in: {hoursLeft}h {minsLeft}m {secsLeft}s
-                          </p>
-                        )}
-                        <button
-                          onClick={() => handleJoinAuction(m.id, isStarted)}
-                          disabled={!isStarted}
-                          className={`text-xs py-1.5 px-4 flex items-center gap-1 ${
-                            isStarted ? 'btn-primary' : 'bg-gray-600 text-gray-400 cursor-not-allowed rounded-md'
-                          }`}
-                        >
-                          <ShoppingBag size={14} />
-                          Join Bid
-                        </button>
-                      </div>
-                    </GlassCard>
-                  );
-                })}
+                      )}
+                      <p className="text-xs text-foreground-subtle mt-1">
+                        By: {m.profiles?.full_name || 'Verified Scraper'}
+                      </p>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => handleExpressInterest(m.id, m.scraper_id)}
+                        className="btn-primary text-xs py-1.5 px-4 flex items-center gap-1"
+                      >
+                        <ShoppingBag size={14} />
+                        Express Interest
+                      </button>
+                    </div>
+                  </GlassCard>
+                ))}
               </div>
             )}
           </div>

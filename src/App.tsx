@@ -27,7 +27,7 @@ import { PickupDetails } from "./pages/PickupDetails";
 
 import { ScraperRequestView } from "./pages/ScraperRequestView";
 import { ProtectedRoute } from "./components/layout/ProtectedRoute";
-import { LiveAuctionRoom } from "./components/ui/LiveAuctionRoom";
+import { NegotiationRoom } from "./components/ui/NegotiationRoom";
 
 function AppWithToast() {
   const { toasts, removeToast } = useToast();
@@ -59,8 +59,8 @@ function AppWithToast() {
         <Route path="/recycler-dashboard" element={<ProtectedRoute allowedRoles={['recycler', 'admin']}><RecyclerDashboard /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         
-        {/* Live Auction Room (Scraper & Recycler) */}
-        <Route path="/auction/:id" element={<ProtectedRoute allowedRoles={['scraper', 'recycler', 'admin']}><LiveAuctionRoom /></ProtectedRoute>} />
+        {/* Negotiation Room (Scraper & Recycler) */}
+        <Route path="/negotiation/:id" element={<ProtectedRoute allowedRoles={['scraper', 'recycler', 'admin']}><NegotiationRoom /></ProtectedRoute>} />
 
         {/* Extra */}
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />

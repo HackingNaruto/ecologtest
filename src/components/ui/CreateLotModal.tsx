@@ -16,7 +16,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
     category: 'mixed_electronics',
     weightKg: 10,
     basePrice: 500,
-    scheduledStartTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // default 1 hr from now
+    description: '',
   });
 
   if (!isOpen) return null;
@@ -32,7 +32,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
         formData.category,
         formData.weightKg,
         formData.basePrice,
-        new Date(formData.scheduledStartTime).toISOString()
+        formData.description
       );
       onSuccess();
       onClose();
@@ -53,7 +53,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
         
         <div className="flex items-center gap-2 mb-6">
           <Package className="text-primary" size={24} />
-          <h2 className="text-lg font-bold">Create Auction Lot</h2>
+          <h2 className="text-lg font-bold">Create Marketplace Lot</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,17 +97,15 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
           </div>
 
           <div>
-            <label className="label">Scheduled Start Time</label>
-            <input
-              type="datetime-local"
+            <label className="label">Item Description & Details</label>
+            <textarea
               required
-              value={formData.scheduledStartTime}
-              onChange={e => setFormData({ ...formData, scheduledStartTime: e.target.value })}
-              className="input-field"
+              rows={3}
+              value={formData.description}
+              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              className="input-field resize-none"
+              placeholder="List out the specific devices, conditions, and any notes for the recyclers..."
             />
-            <p className="text-xs text-foreground-subtle mt-1">
-              Recyclers will be notified and can join the Live Bidding Room at this exact time.
-            </p>
           </div>
 
           <button
@@ -115,7 +113,7 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
             disabled={loading}
             className="w-full btn-primary flex justify-center items-center gap-2 mt-4"
           >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Schedule Auction'}
+            {loading ? <Loader2 className="animate-spin" size={18} /> : 'List on Marketplace'}
           </button>
         </form>
       </div>

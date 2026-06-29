@@ -72,7 +72,8 @@ export interface ScrapLot {
   category: string;
   weight_kg: number;
   base_price: number;
-  status: 'scheduled' | 'live' | 'open_for_bids' | 'completed' | 'paid';
+  description: string | null;
+  status: 'available' | 'negotiating' | 'sold' | 'paid' | 'scheduled' | 'live' | 'open_for_bids' | 'completed';
   scheduled_start_time: string | null;
   auction_end_time: string | null;
   winner_recycler_id: string | null;
@@ -86,6 +87,24 @@ export interface Bid {
   lot_id: string;
   recycler_id: string;
   amount: number;
+  created_at: string;
+}
+
+export interface Message {
+  id: string;
+  lot_id: string;
+  sender_id: string;
+  receiver_id: string;
+  message: string;
+  created_at: string;
+}
+
+export interface Negotiation {
+  id: string;
+  lot_id: string;
+  scraper_id: string;
+  recycler_id: string;
+  status: 'active' | 'accepted' | 'rejected';
   created_at: string;
 }
 
@@ -119,6 +138,8 @@ export interface Database {
       recyclers: { Row: Recycler; Insert: any; Update: any };
       pickup_requests: { Row: PickupRequest; Insert: any; Update: any };
       scrap_lots: { Row: ScrapLot; Insert: any; Update: any };
+      messages: { Row: Message; Insert: any; Update: any };
+      negotiations: { Row: Negotiation; Insert: any; Update: any };
       bids: { Row: Bid; Insert: any; Update: any };
       inventory: { Row: Inventory; Insert: any; Update: any };
       transactions: { Row: Transaction; Insert: any; Update: any };

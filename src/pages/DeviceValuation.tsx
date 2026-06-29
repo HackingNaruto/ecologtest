@@ -44,6 +44,7 @@ export function DeviceValuation() {
   const [step, setStep] = useState<'form' | 'result'>('form');
   const [loading, setLoading] = useState(false);
   const [pickupScheduling, setPickupScheduling] = useState(false);
+  const [dropOffConsent, setDropOffConsent] = useState(false);
   const [valuation, setValuation] = useState<ValuationResult | null>(null);
   
   const [formData, setFormData] = useState<{
@@ -400,13 +401,27 @@ export function DeviceValuation() {
                   </GlassCard>
                 </div>
 
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4 mt-6">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="mt-1 w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                      checked={dropOffConsent}
+                      onChange={(e) => setDropOffConsent(e.target.checked)}
+                    />
+                    <span className="text-sm text-foreground">
+                      <strong>Mandatory Disclaimer:</strong> I agree that I must physically transport and drop off this device at the selected Scraper's location. The Scraper will not pick this up.
+                    </span>
+                  </label>
+                </div>
+
                 <div className="flex gap-3">
                   <button onClick={resetForm} disabled={pickupScheduling} className="btn-secondary flex-1 disabled:opacity-40">
                     Value Another Device
                   </button>
                   <button 
                     onClick={handleSchedulePickup} 
-                    disabled={pickupScheduling}
+                    disabled={pickupScheduling || !dropOffConsent}
                     className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {pickupScheduling ? (
