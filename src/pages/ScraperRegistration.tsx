@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Truck, MapPin, CreditCard, User, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Truck, MapPin, CreditCard, User, CheckCircle, ArrowRight, ShieldCheck, Building2 } from 'lucide-react';
 import { DashboardLayout } from '../components/layout/DashboardLayout';
 import { GlassCard } from '../components/ui/GlassCard';
 import { PageHeader } from '../components/ui/PageHeader';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { registerScraper } from '../services/supabaseApi';
 import { useGeolocation } from '../hooks/useGeolocation';
 
@@ -22,6 +23,7 @@ export function ScraperRegistration() {
     serviceRadius: 10,
     bankAccount: '',
     upiId: '',
+    shopName: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +43,18 @@ export function ScraperRegistration() {
         upi_id: form.upiId,
         current_latitude: location?.latitude || null,
         current_longitude: location?.longitude || null,
+        shop_name: form.shopName,
       });
+
+      // Call Edge Function to create Razorpay Account
+      await supabase.functions.invoke('create-razorpay-account', {
+        body: {
+          scraperId: user.id,
+          businessName: form.shopName || user.user_metadata?.full_name || 'EcoLog Scraper',
+          email: user.email,
+        }
+      });
+
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
@@ -95,6 +108,21 @@ export function ScraperRegistration() {
                   placeholder="XXXX XXXX XXXX"
                   required
                   maxLength={14}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="label">Shop Name / Business Name</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-subtle" size={16} />
+                <input
+                  type="text"
+                  value={form.shopName}
+                  onChange={(e) => setForm({ ...form, shopName: e.target.value })}
+                  className="input-field pl-10"
+                  placeholder="E.g. Green Tech Scrap Shop"
+                  required
                 />
               </div>
             </div>

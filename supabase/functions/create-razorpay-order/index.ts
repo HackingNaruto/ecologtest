@@ -1,46 +1,97 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { corsHeaders } from '../_shared/cors.ts'
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import "@supabase/functions-js/edge-runtime.d.ts";
-import { withSupabase } from "@supabase/server";
+console.log("create-razorpay-order started")
 
-console.log("Hello from Functions!");
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
-// This endpoint uses 'publishable' | 'secret' access, apiKey is required.
-// Use publishable for Client-facing, key-validated endpoints
-// Use secret for Server-to-server, internal calls
-export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req, ctx) => {
-    // Called by another service with a secret key
-    // ctx.supabaseAdmin bypasses RLS — use for privileged operations
-    /*
-    if (ctx.authMode === "secret") {
-      const { user_id } = await req.json();
-      const { data } = await ctx.supabaseAdmin.auth.admin.getUserById(user_id);
+  try {
+    const { amount, scraperId, lotId } = await req.json()
 
-      return Response.json({
-        email: data?.user?.email,
-      });
+    if (!amount || !scraperId || !lotId) {
+      throw new Error("Missing required fields")
     }
-    */
 
-    const { name } = await req.json();
+    const keyId = Deno.env.get('RAZORPAY_KEY_ID')
+    const keySecret = Deno.env.get('RAZORPAY_KEY_SECRET')
+    
+    if (!keyId || !keySecret) {
+      throw new Error("Razorpay credentials not configured")
+    }
 
-    return Response.json({
-      message: `Hello ${name}!`,
-    });
-  }),
-};
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-/* To invoke locally:
+    // 1. Get Scraper's Razorpay Account ID
+    const { data: scraper, error: scraperError } = await supabaseClient
+      .from('scrapers')
+      .select('razorpay_account_id')
+      .eq('user_id', scraperId)
+      .single()
 
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
+    if (scraperError || !scraper?.razorpay_account_id) {
+      throw new Error("Scraper does not have a linked Razorpay account")
+    }
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/create-razorpay-order' \
-    --header 'apiKey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' \
-    --data '{"name":"Functions"}'
+    // 2. Calculate Split (5% Platform, 95% Scraper)
+    // Razorpay accepts amounts in paise (multiply by 100)
+    const amountInPaise = Math.round(amount * 100)
+    const platformFeePaise = Math.round(amountInPaise * 0.05)
+    const scraperTransferPaise = amountInPaise - platformFeePaise
 
-*/
+    // 3. Create Razorpay Order with Transfers
+    const auth = btoa(`${keyId}:${keySecret}`)
+    const rzpResponse = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`
+      },
+      body: JSON.stringify({
+        amount: amountInPaise,
+        currency: 'INR',
+        receipt: `receipt_${lotId.substring(0,8)}`,
+        notes: {
+          lot_id: lotId
+        },
+        transfers: [
+          {
+            account: scraper.razorpay_account_id,
+            amount: scraperTransferPaise,
+            currency: 'INR',
+            notes: {
+              lot_id: lotId
+            },
+            on_hold: 0
+          }
+        ]
+      })
+    })
+
+    const rzpData = await rzpResponse.json()
+    if (!rzpResponse.ok) {
+      throw new Error(rzpData.error?.description || "Failed to create Razorpay order")
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        orderId: rzpData.id,
+        amountInPaise,
+        scraperAccountId: scraper.razorpay_account_id
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    )
+  } catch (error: any) {
+    console.error(error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 },
+    )
+  }
+})

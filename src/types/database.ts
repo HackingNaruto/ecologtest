@@ -36,6 +36,7 @@ export interface Scraper {
   current_latitude: number | null;
   current_longitude: number | null;
   updated_at: string;
+  razorpay_account_id: string | null;
 }
 
 export interface Recycler {
@@ -125,8 +126,11 @@ export interface Transaction {
   scraper_id: string | null;
   amount: number;
   payment_status: PaymentStatus;
+  payment_method: string | null;
   razorpay_order_id: string | null;
   razorpay_payment_id: string | null;
+  platform_fee: number | null;
+  scraper_amount: number | null;
   created_at: string;
 }
 

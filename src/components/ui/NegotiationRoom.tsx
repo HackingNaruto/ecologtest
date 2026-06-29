@@ -97,6 +97,16 @@ export function NegotiationRoom() {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleSettlePayment = async () => {
     if (!payoutAmount || !lot) return;
     setProcessingPayout(true);
@@ -105,21 +115,61 @@ export function NegotiationRoom() {
     const platformFee = amount * 0.05; // 5% platform fee
     const scraperReceives = amount - platformFee;
 
-    await new Promise(r => setTimeout(r, 1500)); // Simulate Razorpay
-    
     try {
-      // Mark lot as sold
-      await updateLotStatus(lot.id, 'sold');
-      // For simplicity, we just update the base_price to reflect final sold price in this prototype
-      await supabase.from('scrap_lots').update({ base_price: amount }).eq('id', lot.id);
+      // 1. Load Razorpay script
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        throw new Error('Failed to load Razorpay SDK');
+      }
 
-      alert(`Payment Successful!\nYou paid: ₹${amount}\nPlatform Fee: ₹${platformFee}\nScraper Received: ₹${scraperReceives}`);
+      // 2. Call Edge Function to create order
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: amount,
+          scraperId: lot.scraper_id,
+          lotId: lot.id
+        }
+      });
+
+      if (error || !data) {
+        throw new Error(data?.error || 'Failed to create payment order');
+      }
+
+      // 3. Open Razorpay Checkout Modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_YourTestKeyHere', // Should be environment variable
+        amount: data.amountInPaise,
+        currency: 'INR',
+        name: 'EcoLog v2',
+        description: 'Scrap Lot Payment',
+        order_id: data.orderId,
+        handler: function (response: any) {
+          // Success callback
+          // Note: Actual DB updates are handled by the secure Webhook
+          alert(`Payment Successful! Payment ID: ${response.razorpay_payment_id}`);
+          setPayoutAmount('');
+          loadData(); // Will refresh and show sold if webhook completes fast enough
+        },
+        prefill: {
+          name: user?.user_metadata?.full_name || 'Recycler',
+          email: user?.email,
+        },
+        theme: {
+          color: '#10b981' // primary color
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        console.error(response.error);
+        alert('Payment Failed: ' + response.error.description);
+      });
       
-      setPayoutAmount('');
-      loadData();
-    } catch (error) {
+      rzp.open();
+
+    } catch (error: any) {
       console.error(error);
-      alert('Failed to process payment.');
+      alert(error.message || 'Failed to process payment.');
     } finally {
       setProcessingPayout(false);
     }
