@@ -36,9 +36,9 @@ export function CreateLotModal({ isOpen, onClose, onSuccess }: CreateLotModalPro
       );
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to create lot");
+      alert("Failed to create lot: " + (err?.message || JSON.stringify(err)));
     } finally {
       setLoading(false);
     }
