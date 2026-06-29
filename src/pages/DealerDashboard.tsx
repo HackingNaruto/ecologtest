@@ -25,8 +25,7 @@ import {
   getAssignedPickups,
   getScraperByUserId,
   updatePickupStatus,
-  updateScraperLocation,
-  getScraperLots
+  updateScraperLocation
 } from '../services/supabaseApi';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database';
@@ -45,8 +44,6 @@ export default function DealerDashboard() {
   const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [scraperProfile, setScraperProfile] = useState<any>(null);
   const [recyclers, setRecyclers] = useState<Recycler[]>([]);
-  const [scraperLots, setScraperLots] = useState<any[]>([]);
-  const [isCreateLotOpen, setIsCreateLotOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [deliveringId, setDeliveringId] = useState<string | null>(null);
@@ -73,10 +70,6 @@ export default function DealerDashboard() {
       setScraperProfile(scraperData);
       setRecyclers((recyclerData.data as Recycler[]) || []);
       
-      if (user.id) {
-        const lots = await getScraperLots(user.id);
-        setScraperLots(lots);
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -226,14 +219,7 @@ export default function DealerDashboard() {
         <StatCard title="Active Jobs" value={activeJobs.length} icon={Truck} />
         <StatCard title="Delivered" value={deliveredJobs.length} icon={CheckCircle} />
         <StatCard title="Total Earnings" value={`₹${totalEarnings}`} icon={DollarSign} />
-        <StatCard title="Active Listings" value={scraperLots.filter(l => l.status === 'available').length} icon={PackageCheck} />
       </div>
-
-      <CreateLotModal 
-        isOpen={isCreateLotOpen} 
-        onClose={() => setIsCreateLotOpen(false)} 
-        onSuccess={loadData} 
-      />
 
       {/* Deliver to recycler modal */}
       {deliveringId && (
@@ -344,74 +330,6 @@ export default function DealerDashboard() {
           </div>
         </div>
       )}
-
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="section-title">My Marketplace Listings</h2>
-            <button 
-              onClick={() => setIsCreateLotOpen(true)}
-              className="btn-primary text-sm py-1.5"
-            >
-              + Create Lot
-            </button>
-          </div>
-
-          {scraperLots.length === 0 ? (
-            <GlassCard>
-              <p className="text-center text-foreground-muted py-8">
-                You haven't created any marketplace lots yet.
-              </p>
-            </GlassCard>
-          ) : (
-            <div className="space-y-3">
-              {scraperLots.map((lot, i) => {
-                return (
-                  <motion.div
-                    key={lot.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="glass-card p-4 glass-card-hover"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium capitalize">
-                            {lot.category.replace(/_/g, ' ')}
-                          </p>
-                          <StatusBadge status={lot.status} />
-                        </div>
-                        <p className="text-xs text-foreground-muted mt-1">
-                          {lot.weight_kg} kg • Base: ₹{lot.base_price}
-                        </p>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        {lot.status === 'sold' ? (
-                          <p className="text-sm font-semibold text-primary">
-                            Sold!
-                          </p>
-                        ) : (
-                          <p className="text-sm font-medium text-foreground-muted">
-                            Awaiting Recyclers
-                          </p>
-                        )}
-                        
-                        <button
-                          onClick={() => navigate(`/negotiation/${lot.id}`)}
-                          className="btn-primary text-xs py-1 px-4"
-                        >
-                          View Chats
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
