@@ -83,14 +83,6 @@ export interface ScrapLot {
   updated_at: string;
 }
 
-export interface Bid {
-  id: string;
-  lot_id: string;
-  recycler_id: string;
-  amount: number;
-  created_at: string;
-}
-
 export interface Message {
   id: string;
   lot_id: string;
@@ -144,7 +136,7 @@ export interface Database {
       scrap_lots: { Row: ScrapLot; Insert: any; Update: any };
       messages: { Row: Message; Insert: any; Update: any };
       negotiations: { Row: Negotiation; Insert: any; Update: any };
-      bids: { Row: Bid; Insert: any; Update: any };
+
       inventory: { Row: Inventory; Insert: any; Update: any };
       transactions: { Row: Transaction; Insert: any; Update: any };
     };

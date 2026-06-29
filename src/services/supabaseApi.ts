@@ -307,16 +307,6 @@ export const updateLotStatus = async (lotId: string, status: string, endTime?: s
   if (error) throw error;
   return data;
 };
-
-export const closeAuctionSecurely = async (lotId: string) => {
-  const { data, error } = await supabase.rpc("close_auction_securely", {
-    target_lot_id: lotId
-  });
-
-  if (error) throw error;
-  return data;
-};
-
 export const getScraperLots = async (scraperId: string) => {
   const { data, error } = await supabase
     .from("scrap_lots")
@@ -328,55 +318,7 @@ export const getScraperLots = async (scraperId: string) => {
   return data || [];
 };
 
-export const placeBid = async (
-  lotId: string,
-  recyclerId: string,
-  amount: number
-) => {
-  const { data, error } = await supabase
-    .from("bids")
-    .insert({
-      lot_id: lotId,
-      recycler_id: recyclerId,
-      amount
-    })
-    .select()
-    .single();
 
-  if (error) throw error;
-  return data;
-};
-
-export const getBidsForLot = async (lotId: string) => {
-  const { data, error } = await supabase
-    .from("bids")
-    .select("*, profiles!bids_recycler_id_fkey(full_name)")
-    .eq("lot_id", lotId)
-    .order("amount", { ascending: false });
-
-  if (error) return [];
-  return data || [];
-};
-
-export const closeAuction = async (
-  lotId: string,
-  winnerId: string,
-  winningAmount: number
-) => {
-  const { data, error } = await supabase
-    .from("scrap_lots")
-    .update({
-      status: "completed",
-      winner_recycler_id: winnerId,
-      winning_bid_amount: winningAmount
-    })
-    .eq("id", lotId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
 
 export const sendMessage = async (
   lotId: string,
