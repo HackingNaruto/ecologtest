@@ -431,60 +431,62 @@ export default function DealerDashboard() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="glass-card p-4 glass-card-hover"
+                  className="glass-card p-4 glass-card-hover flex items-center justify-between gap-4"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    {job.photo_url ? (
+                      <img 
+                        src={job.photo_url} 
+                        alt="Device" 
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-md border border-border shrink-0" 
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-md bg-surface-elevated border border-border flex items-center justify-center shrink-0 text-foreground-muted text-xs">
+                        No Img
+                      </div>
+                    )}
+                    <div>
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium capitalize">
                           {job.device_type || 'Device'}
                         </p>
                         <StatusBadge status={job.status} />
                       </div>
-                      
-                      {job.photo_url && (
-                        <img 
-                          src={job.photo_url} 
-                          alt="Device" 
-                          className="mt-3 w-20 h-20 object-cover rounded-md border border-border" 
-                        />
-                      )}
-                      
-                      <div className="flex items-center gap-2 mt-2 text-xs text-foreground-muted">
+                      <div className="flex items-center gap-2 mt-1 text-xs text-foreground-muted">
                         <Clock size={12} />
                         <span>{new Date(job.created_at).toLocaleDateString()}</span>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-primary">
-                        ₹{job.pickup_fee || 0}
-                      </p>
+                      {Number(job.pickup_fee) > 0 && (
+                        <p className="text-sm font-semibold text-primary mt-1">
+                          ₹{job.pickup_fee}
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-border">
+                  <div className="flex shrink-0">
                     {job.status === 'requested' && (
                       <button
                         onClick={() => handleAcceptJob(job.id)}
-                        className="btn-primary text-sm py-1.5 flex-1"
+                        className="btn-primary text-xs py-1.5 px-3"
                       >
-                        Accept Request
+                        Accept
                       </button>
                     )}
                     {job.status === 'assigned' && (
                       <button
                         onClick={() => setPayoutJobId(job.id)}
-                        className="btn-primary text-sm py-1.5 flex-1 flex items-center justify-center gap-2"
+                        className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1"
                       >
-                        <DollarSign size={16} /> Pay User & Receive
+                        <DollarSign size={14} /> Pay & Receive
                       </button>
                     )}
                     {job.status === 'picked_up' && (
                       <button
                         onClick={() => openDeliverModal(job.id)}
-                        className="btn-secondary text-sm py-1.5 flex-1"
+                        className="btn-secondary text-xs py-1.5 px-3"
                       >
-                        Deliver to Recycler
+                        Deliver
                       </button>
                     )}
                   </div>
